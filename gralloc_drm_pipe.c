@@ -89,11 +89,6 @@ static unsigned get_pipe_bind(int usage)
 {
 	unsigned bind = PIPE_BIND_SHARED;
 
-	if (usage & GRALLOC_USAGE_SW_READ_MASK)
-		bind |= PIPE_BIND_TRANSFER_READ;
-	if (usage & GRALLOC_USAGE_SW_WRITE_MASK)
-		bind |= PIPE_BIND_TRANSFER_WRITE;
-
 	if (usage & GRALLOC_USAGE_HW_TEXTURE)
 		bind |= PIPE_BIND_SAMPLER_VIEW;
 	if (usage & GRALLOC_USAGE_HW_RENDER)
@@ -144,7 +139,7 @@ static struct pipe_buffer *get_pipe_buffer_locked(struct pipe_manager *pm,
 		buf->winsys.stride = handle->stride;
 
 		buf->resource = pm->screen->resource_from_handle(pm->screen,
-				&templ, &buf->winsys);
+				&templ, &buf->winsys, PIPE_HANDLE_USAGE_READ_WRITE);
 		if (!buf->resource)
 			goto fail;
 	}
@@ -156,7 +151,7 @@ static struct pipe_buffer *get_pipe_buffer_locked(struct pipe_manager *pm,
 
 		buf->winsys.type = DRM_API_HANDLE_TYPE_SHARED;
 		if (!pm->screen->resource_get_handle(pm->screen,
-					buf->resource, &buf->winsys))
+					buf->resource, NULL, &buf->winsys, PIPE_HANDLE_USAGE_READ_WRITE))
 			goto fail;
 	}
 
@@ -167,7 +162,7 @@ static struct pipe_buffer *get_pipe_buffer_locked(struct pipe_manager *pm,
 		memset(&tmp, 0, sizeof(tmp));
 		tmp.type = DRM_API_HANDLE_TYPE_KMS;
 		if (!pm->screen->resource_get_handle(pm->screen,
-					buf->resource, &tmp))
+					buf->resource, NULL, &tmp, PIPE_HANDLE_USAGE_READ_WRITE))
 			goto fail;
 
 		buf->base.fb_handle = tmp.handle;
